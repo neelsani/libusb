@@ -114,7 +114,17 @@ pub fn build(b: *std.Build) void {
                 "os/windows_usbdk.c",
                 "os/windows_winusb.c",
             };
-
+            lib.root_module.export_symbol_names = &[_][]const u8{
+                "libusb_init",
+                "libusb_exit",
+                "libusb_get_device_list",
+                "libusb_free_device_list",
+                "libusb_get_device_descriptor",
+                "libusb_open",
+                "libusb_close",
+                "libusb_get_string_descriptor_ascii",
+                // Add any other libusb functions you need
+            };
             lib.addCSourceFiles(.{
                 .files = windows_sources,
                 .flags = &.{},
