@@ -126,6 +126,7 @@ pub fn build(b: *std.Build) void {
                 // Note: Zig handles this differently than CMake
                 lib.root_module.addCMacro("LIBUSB_DLL", "1");
             }
+            lib.linkLibC();
 
             //lib.linkSystemLibrary("windowsapp");
 
