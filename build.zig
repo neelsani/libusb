@@ -49,9 +49,6 @@ pub fn build(b: *std.Build) void {
     const enable_debug_logging = b.option(bool, "debug-logging", "Enable debug logging") orelse false;
     const enable_udev = b.option(bool, "udev", "Enable udev backend for device enumeration (Linux only)") orelse true;
 
-    _ = enable_debug_logging;
-    _ = enable_logging;
-
     // Version information - read from version.h
     const version_h_path = upstream.path("libusb/version.h").getPath(b);
     const version_h_content = std.fs.cwd().readFileAlloc(b.allocator, version_h_path, 1024 * 1024) catch |err| {
@@ -78,7 +75,37 @@ pub fn build(b: *std.Build) void {
     });
 
     // Generate config.h
-    const config_h = generateConfigH(b, target);
+    const config_h = conf: {
+        const is_posix =
+            target.result.isDarwinLibC() or
+            target.result.os.tag == .linux or
+            target.result.os.tag == .openbsd or
+            target.result.os.tag == .emscripten;
+        const config = b.addConfigHeader(.{ .style = .{
+            .cmake = b.path("config.h.in"),
+        } }, .{
+            .HAVE_CLOCK_GETTIME = define_from_bool(!(target.result.os.tag == .windows)),
+            .HAVE_PTHREAD_CONDATTR_SETCLOCK = null,
+            .HAVE_PTHREAD_SETNAME_NP = null,
+            .HAVE_PTHREAD_THREADID_NP = null,
+            .HAVE_EVENTFD = null,
+            .HAVE_PIPE2 = null,
+            .HAVE_SYSLOG = define_from_bool(is_posix),
+            .HAVE_ASM_TYPES_H = null,
+            .HAVE_STRING_H = 1,
+            .HAVE_SYS_TIME_H = 1,
+            .HAVE_TIMERFD = null,
+            .HAVE_NFDS_T = null,
+            .HAVE_STRUCT_TIMESPEC = 1,
+            .DEFAULT_VISIBILITY = .@"__attribute__ ((visibility (\"default\")))",
+            .PLATFORM_WINDOWS = define_from_bool(target.result.os.tag == .windows),
+            .PLATFORM_POSIX = define_from_bool(is_posix),
+            .ENABLE_LOGGING = define_from_bool(enable_logging),
+            .ENABLE_DEBUG_LOGGING = define_from_bool(enable_debug_logging),
+            ._GNU_SOURCE = 1,
+        });
+        break :conf config;
+    };
     lib.addConfigHeader(config_h);
     //lib.addIncludePath(b.path("config.h"));
     // Common sources - make sure to include strerror.c which has logging functions
