@@ -245,7 +245,7 @@ pub fn build(b: *std.Build) void {
             lib.root_module.addCMacro("HAVE_EMSCRIPTEN_API", "1");
             lib.root_module.addCMacro("__EMSCRIPTEN_ATOMICS__", "1");
             lib.root_module.addCMacro("_LIBCPP_VERSION", "1"); // Important for libc++ headers
-
+            lib.root_module.addCMacro("_REENTRANT", "");
             // Include emscripten for cross compilation
             if (b.lazyDependency("emsdk", .{})) |dep| {
                 if (try emSdkSetupStep(b, dep)) |emSdkStep| {
